@@ -1,0 +1,67 @@
+from django.core.validators import MinValueValidator
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+from decimal import Decimal
+from markdownx.models import MarkdownxField
+
+# Create your models here.
+
+class Unit(models.TextChoices):
+  ITEM = "item", _("szt.")
+  LITRE = "litre", _("l")
+  MILLILITER = "milliliter", _("ml")
+  KILOGRAM = "kilogram", _("kg")
+  GRAM = "gram", _("g")
+  SPOON = "spoon", _("łyżki")
+  TEASPOON = "teaspoon", _("łyżeczki")
+  SEED = "seed", _("ziarna")
+  LEAF = "leaf", _("listki")
+
+class Ingredient(models.Model):
+  name = models.CharField(max_length=100, verbose_name="Nazwa")
+
+  def __str__(self):
+    return self.name
+  
+  class Meta:
+    verbose_name = "Składnik"
+    verbose_name_plural = "Składniki"
+
+class Equipment(models.Model):
+  name = models.CharField(max_length=100, verbose_name="Nazwa")
+
+  def __str__(self):
+    return self.name
+  
+  class Meta:
+    verbose_name = "Narzędzie"
+    verbose_name_plural = "Narzędzia"
+
+class Recipe(models.Model):
+  title = models.CharField(max_length=100, verbose_name="Tytuł")
+  owner = models.CharField(max_length=20, verbose_name="Autor")
+  preparation_time = models.DurationField(help_text="Format: HH:MM", verbose_name="Czas przygotowania")
+  required_equipment = models.ManyToManyField(Equipment, verbose_name="Wymagane narzędzia")
+  description = MarkdownxField(max_length=4000, verbose_name="Opis")
+  
+  def __str__(self):
+    return f"{self.title} - {self.owner}"
+  
+  class Meta:
+    constraints = [
+      models.UniqueConstraint(
+        fields=["title", "owner"], name="unique_recipe"
+      )
+    ]
+    verbose_name = "Przepis"
+    verbose_name_plural = "Przepisy"
+
+class IngredientRecipe(models.Model):
+  recipe = models.ForeignKey(Recipe, on_delete=models.PROTECT, verbose_name="Przepis")
+  ingredient = models.ForeignKey(Ingredient, on_delete=models.PROTECT, verbose_name="Składnik")
+  quantity = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))], verbose_name="Ilość")
+  unit = models.CharField(max_length=10, choices=Unit, verbose_name="Jednostka")
+  
+  def __str__(self):
+    return "Składnik"
+
