@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG')
 
 ALLOWED_HOSTS = []
 
@@ -41,12 +41,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'markdownx'
+    'markdownx',
+    'corsheaders'
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -125,12 +127,10 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-MARKDOWNX_EDITOR_RESIZABLE = False
-MEDIA_URL = '/media/'
-MEDIA_ROOT = f"{BASE_DIR}/media"
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173"
+]
 
-MARKDOWNX_UPLOAD_MAX_SIZE = 5 * 1024 * 1024
-MARKDOWNX_IMAGE_MAX_SIZE = {
-    'size': (800, 800),
-    'quality': 90
-}
+MARKDOWNX_UPLOAD_MAX_SIZE = 0
+MARKDOWNX_UPLOAD_CONTENT_TYPES = []
+MARKDOWNX_EDITOR_RESIZABLE = False

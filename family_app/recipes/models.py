@@ -40,7 +40,7 @@ class Equipment(models.Model):
 class Recipe(models.Model):
   title = models.CharField(max_length=100, verbose_name="Tytuł")
   owner = models.CharField(max_length=20, verbose_name="Autor")
-  preparation_time = models.DurationField(help_text="Format: HH:MM", verbose_name="Czas przygotowania")
+  preparation_time = models.DurationField(help_text="Format: HH:MM:SS", verbose_name="Czas przygotowania")
   required_equipment = models.ManyToManyField(Equipment, verbose_name="Wymagane narzędzia")
   description = MarkdownxField(max_length=4000, verbose_name="Opis")
   
@@ -55,12 +55,19 @@ class Recipe(models.Model):
     ]
     verbose_name = "Przepis"
     verbose_name_plural = "Przepisy"
+    
+  
 
 class IngredientRecipe(models.Model):
   recipe = models.ForeignKey(Recipe, on_delete=models.PROTECT, verbose_name="Przepis")
   ingredient = models.ForeignKey(Ingredient, on_delete=models.PROTECT, verbose_name="Składnik")
   quantity = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))], verbose_name="Ilość")
   unit = models.CharField(max_length=10, choices=Unit, verbose_name="Jednostka")
+  
+  class Meta:
+    constraints = [
+      models.UniqueConstraint(fields=['recipe', 'ingredient'], name='no-repeated-ingredient', violation_error_message='Ten składnik został już w innym miejscu dodany do tego przepisu')
+    ]
   
   def __str__(self):
     return "Składnik"

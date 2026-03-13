@@ -14,6 +14,8 @@ class IngredientRecipeInline(admin.TabularInline):
 
 class RecipeAdmin(admin.ModelAdmin):
   inlines = [IngredientRecipeInline]
+  readonly_fields = ("id",)
+  fields = ('id', 'title', 'owner', 'preparation_time', 'description', 'required_equipment')
   
   def formfield_for_manytomany(self, db_field, request, **kwargs):
     if db_field.name == "ingredients":
@@ -24,7 +26,6 @@ class RecipeAdmin(admin.ModelAdmin):
       kwargs["widget"] = AdminMarkdownxWidget
     return super().formfield_for_manytomany(db_field, request, **kwargs)
   
-
 admin.site.register(models.Recipe, RecipeAdmin)
 admin.site.register(models.Ingredient)
 admin.site.register(models.Equipment)
