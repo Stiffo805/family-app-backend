@@ -1,0 +1,24 @@
+databases:
+  - name: family_db
+    plan: free
+    databaseName: family_db
+    user: admin_user
+    region: frankfurt
+
+services:
+  - type: web
+    plan: free
+    name: family_app_backend
+    region: frankfurt
+    runtime: python
+    buildCommand: './build.sh'
+    startCommand: "gunicorn family_app.wsgi:application"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: family_db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "false"
