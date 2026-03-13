@@ -25,6 +25,11 @@ class RecipeSerializer(serializers.ModelSerializer):
     
     required_equipment = EquipmentSerializer(many=True, read_only=True)
     
+    author = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='name'
+    )
+    
     class Meta:
         model = models.Recipe
         fields = [
@@ -33,6 +38,11 @@ class RecipeSerializer(serializers.ModelSerializer):
         ]
         
 class RecipeInfoSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='name'
+    )
+    
     class Meta:
         model = models.Recipe
         fields = ['id', 'title', 'author', 'preparation_time']
