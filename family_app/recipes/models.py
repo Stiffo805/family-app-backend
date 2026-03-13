@@ -16,6 +16,16 @@ class Unit(models.TextChoices):
   TEASPOON = "teaspoon", _("łyżeczki")
   SEED = "seed", _("ziarna")
   LEAF = "leaf", _("listki")
+  
+class Author(models.Model):
+  name = models.CharField(max_length=40, verbose_name="Autor")
+  
+  def __str__(self):
+    return self.name
+  
+  class Meta:
+    verbose_name = "Autor"
+    verbose_name_plural = "Autorzy przepisów"
 
 class Ingredient(models.Model):
   name = models.CharField(max_length=100, verbose_name="Nazwa")
@@ -39,18 +49,23 @@ class Equipment(models.Model):
 
 class Recipe(models.Model):
   title = models.CharField(max_length=100, verbose_name="Tytuł")
-  owner = models.CharField(max_length=20, verbose_name="Autor")
+  author = models.ForeignKey(
+    Author,
+    on_delete=models.PROTECT,
+    verbose_name="Autor przepisu",
+    related_name="recipes"
+  )
   preparation_time = models.DurationField(help_text="Format: HH:MM:SS", verbose_name="Czas przygotowania")
   required_equipment = models.ManyToManyField(Equipment, verbose_name="Wymagane narzędzia")
   description = MarkdownxField(max_length=4000, verbose_name="Opis")
   
   def __str__(self):
-    return f"{self.title} - {self.owner}"
+    return f"{self.title} - {self.author}"
   
   class Meta:
     constraints = [
       models.UniqueConstraint(
-        fields=["title", "owner"], name="unique_recipe"
+        fields=["title", "author"], name="unique_recipe"
       )
     ]
     verbose_name = "Przepis"

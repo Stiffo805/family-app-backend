@@ -15,7 +15,7 @@ class IngredientRecipeInline(admin.TabularInline):
 class RecipeAdmin(admin.ModelAdmin):
   inlines = [IngredientRecipeInline]
   readonly_fields = ("id",)
-  fields = ('id', 'title', 'owner', 'preparation_time', 'description', 'required_equipment')
+  fields = ('id', 'title', 'author', 'preparation_time', 'description', 'required_equipment')
   
   def formfield_for_manytomany(self, db_field, request, **kwargs):
     if db_field.name == "ingredients":
@@ -29,3 +29,4 @@ class RecipeAdmin(admin.ModelAdmin):
 admin.site.register(models.Recipe, RecipeAdmin)
 admin.site.register(models.Ingredient)
 admin.site.register(models.Equipment)
+admin.site.register(models.Author)
