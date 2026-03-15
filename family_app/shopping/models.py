@@ -1,0 +1,54 @@
+from django.core.validators import MinValueValidator
+from django.db import models
+from decimal import Decimal
+from recipes.models import Unit
+
+# Create your models here.
+
+class ShoppingListItem(models.Model):
+    name = models.CharField(max_length=200, verbose_name="Nazwa")
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name = "Przemiot zakupowy"
+        verbose_name_plural = "Przedmioty zakupowe"
+    
+class ShoppingList(models.Model):
+    title = models.CharField(max_length=200, verbose_name="Tytuł")
+    description = models.CharField(max_length=400, null=True, blank=True, verbose_name="Opis/uwagi")
+    
+    def __str__(self):
+        return self.title
+    
+    class Meta:
+        verbose_name = "Lista zakupów"
+        verbose_name_plural = "Listy zakupów"
+
+class ShoppingItemsList(models.Model):
+    shopping_list = models.ForeignKey(
+        ShoppingList,
+        on_delete=models.PROTECT
+    )
+    shopping_list_item = models.ForeignKey(
+        ShoppingListItem,
+        on_delete=models.PROTECT,
+        verbose_name="Przedmiot zakupowy"
+    )
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))], verbose_name="Ilość")
+    unit = models.CharField(max_length=10, choices=Unit, verbose_name="Jednostka")
+    extra_notes = models.CharField(max_length=1000, null=True, blank=True, verbose_name="Dodatkowe uwagi")
+    is_checked = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return str(self.id)
+    
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["shopping_list", "shopping_list_item"], name="unique_item"
+            )
+        ]
+        verbose_name = "Przedmiot zakupowy"
+        verbose_name_plural = "Lista przedmiotów zakupowych"
