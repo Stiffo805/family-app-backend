@@ -18,8 +18,15 @@ from django.contrib import admin
 from django.urls import path, include
 from markdownx.views import MarkdownifyView
 
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('recipes/', include("recipes.urls")),
-    path('markdownx/markdownify/', MarkdownifyView.as_view(), name='markdownx_markdownify')
+    path('shopping/', include("shopping.urls")),
+    path('markdownx/markdownify/', MarkdownifyView.as_view(), name='markdownx_markdownify'),
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    
+    # Endpoint for the Swagger UI
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 ]
