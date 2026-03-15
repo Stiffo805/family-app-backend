@@ -19,14 +19,16 @@ from django.urls import path, include
 from markdownx.views import MarkdownifyView
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from rest_framework.authtoken.views import obtain_auth_token
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('recipes/', include("recipes.urls")),
     path('shopping/', include("shopping.urls")),
     path('markdownx/markdownify/', MarkdownifyView.as_view(), name='markdownx_markdownify'),
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/login/', obtain_auth_token, name='api_token_auth'),
     # Endpoint for the Swagger UI
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 ]

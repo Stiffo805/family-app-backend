@@ -45,12 +45,17 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'markdownx',
     'corsheaders',
-    'drf_spectacular'
+    'drf_spectacular',
+    'rest_framework',
+    'rest_framework.authtoken'
 ]
 
 REST_FRAMEWORK = {
     # ... your existing DRF settings ...
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
 }
 
 # Optional: Add metadata for your Swagger documentation

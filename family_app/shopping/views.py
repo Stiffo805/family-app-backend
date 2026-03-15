@@ -1,5 +1,6 @@
 from django.http import JsonResponse, Http404
 from django.shortcuts import render
+from rest_framework.permissions import IsAdminUser
 from rest_framework.request import Request
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -43,6 +44,8 @@ class ShoppingListView(APIView):
         return JsonResponse(serializer.data)
 
 class ShoppingListItemView(APIView):
+    permission_classes = [IsAdminUser]
+    
     def get_object(self, list_id: int, entry_id: int):
         return get_shopping_list_entry(list_id, entry_id)
     
