@@ -21,7 +21,10 @@ from markdownx.views import MarkdownifyView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.authtoken.views import obtain_auth_token
 
+from family_app.views import IsAliveView
+
 urlpatterns = [
+    path('alive/', IsAliveView.as_view(), name='is-alive'),
     path('admin/', admin.site.urls),
     path('recipes/', include("recipes.urls")),
     path('shopping/', include("shopping.urls")),
