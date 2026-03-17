@@ -1,37 +1,50 @@
 import json
+import logging
 from django.utils import timezone
 from django.conf import settings
 from pywebpush import webpush, WebPushException
 
 from .models import ListPushSubscription
 
+# Setup a basic logger to record errors without crashing the app
+logger = logging.getLogger(__name__)
+
 
 def notify_subscribers_about_update(shopping_list):
-    # Get the raw, timezone-aware current time (usually UTC internally)
-    # and convert it to a standard ISO 8601 string so JavaScript easily understands it.
-    raw_timestamp = timezone.now().isoformat()
+    try:
+        raw_timestamp = timezone.now().isoformat()
+        
+        payload = json.dumps({
+            "title": "Aktualizacja listy zakupów",
+            "list_title": shopping_list.title,
+            "timestamp": raw_timestamp,
+            "url": f"/shopping/lists/{shopping_list.id}"
+        })
+        
+        subscriptions = ListPushSubscription.objects.filter(shopping_list=shopping_list)
+        
+        for sub in subscriptions:
+            try:
+                webpush(
+                    subscription_info={
+                        "endpoint": sub.endpoint,
+                        "keys": {"p256dh": sub.p256dh, "auth": sub.auth}
+                    },
+                    data=payload,
+                    vapid_private_key=settings.VAPID_PRIVATE_KEY,
+                    vapid_claims={"sub": settings.VAPID_ADMIN_EMAIL}
+                )
+            except WebPushException as ex:
+                if ex.response and ex.response.status_code == 410:
+                    # Device unsubscribed or token expired, safe to delete
+                    sub.delete()
+                else:
+                    # Log WebPush specific errors (e.g., 400 Bad Request, 401 Unauthorized)
+                    logger.error(f"WebPush error for {sub.endpoint}: {ex}")
+            except Exception as e:
+                # Catch any cryptography or formatting errors for a specific subscription
+                logger.error(f"Failed to send push to {sub.endpoint}: {e}")
     
-    # We send raw data instead of a pre-formatted sentence
-    payload = json.dumps({
-        "title": "Aktualizacja listy zakupów",
-        "list_title": shopping_list.title,
-        "timestamp": raw_timestamp,
-        "url": f"/family-app-frontend/shopping/lists/{shopping_list.id}"
-    })
-    
-    subscriptions = ListPushSubscription.objects.filter(shopping_list=shopping_list)
-    
-    for sub in subscriptions:
-        try:
-            webpush(
-                subscription_info={
-                    "endpoint": sub.endpoint,
-                    "keys": {"p256dh": sub.p256dh, "auth": sub.auth}
-                },
-                data=payload,
-                vapid_private_key=settings.VAPID_PRIVATE_KEY,
-                vapid_claims={"sub": settings.VAPID_ADMIN_EMAIL}
-            )
-        except WebPushException as ex:
-            if ex.response and ex.response.status_code == 410:
-                sub.delete()
+    except Exception as e:
+        # Catch any global errors (like missing settings) so the main Admin save doesn't crash!
+        logger.error(f"Critical error in notify_subscribers_about_update: {e}")
