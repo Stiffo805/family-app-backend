@@ -1,14 +1,9 @@
 import json
-import logging
 from django.utils import timezone
 from django.conf import settings
 from pywebpush import webpush, WebPushException
 
 from .models import ListPushSubscription
-
-# Setup a basic logger to record errors without crashing the app
-logger = logging.getLogger(__name__)
-
 
 def notify_subscribers_about_update(shopping_list):
     try:
@@ -40,11 +35,11 @@ def notify_subscribers_about_update(shopping_list):
                     sub.delete()
                 else:
                     # Log WebPush specific errors (e.g., 400 Bad Request, 401 Unauthorized)
-                    logger.error(f"WebPush error for {sub.endpoint}: {ex}")
+                    print(f"WebPush error for {sub.endpoint}: {ex}")
             except Exception as e:
                 # Catch any cryptography or formatting errors for a specific subscription
-                logger.error(f"Failed to send push to {sub.endpoint}: {e}")
+                print(f"Failed to send push to {sub.endpoint}: {e}")
     
     except Exception as e:
         # Catch any global errors (like missing settings) so the main Admin save doesn't crash!
-        logger.error(f"Critical error in notify_subscribers_about_update: {e}")
+        print(f"Critical error in notify_subscribers_about_update: {e}")
