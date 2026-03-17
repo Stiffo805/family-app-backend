@@ -13,7 +13,7 @@ def notify_subscribers_about_update(shopping_list):
             "title": "Aktualizacja listy zakupów",
             "list_title": shopping_list.title,
             "timestamp": raw_timestamp,
-            "url": f"/shopping/lists/{shopping_list.id}"
+            "url": f"/family-app-frontend/shopping/lists/{shopping_list.id}"
         })
         
         subscriptions = ListPushSubscription.objects.filter(shopping_list=shopping_list)
