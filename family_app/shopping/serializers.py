@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from rest_framework.relations import SlugRelatedField
+from shopping.models import ListPushSubscription
 
-from shopping.models import ShoppingList, ShoppingItemsList, ShoppingListItem
+from shopping.models import ShoppingList, ShoppingItemsList
 
 class ShoppingListsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -33,3 +33,38 @@ class ShoppingListSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShoppingList
         fields = ['id', 'title', 'description', 'entries']
+
+
+# Serializer for the nested 'keys' object provided by the browser
+class PushSubscriptionKeysSerializer(serializers.Serializer):
+    p256dh = serializers.CharField(max_length=200)
+    auth = serializers.CharField(max_length=200)
+
+
+class ListPushSubscriptionSerializer(serializers.ModelSerializer):
+    # Expect a nested dictionary named 'keys' in the request payload
+    keys = PushSubscriptionKeysSerializer(write_only=True)
+    
+    class Meta:
+        model = ListPushSubscription
+        fields = ['endpoint', 'keys']
+    
+    def create(self, validated_data):
+        # Extract the nested keys
+        keys_data = validated_data.pop('keys')
+        
+        # We retrieve the specific shopping list from the serializer's context
+        # (which we will pass in our view)
+        shopping_list = self.context['shopping_list']
+        
+        # Create or update the subscription.
+        # We use 'endpoint' as the unique identifier for the device's browser.
+        subscription, created = ListPushSubscription.objects.update_or_create(
+            shopping_list=shopping_list,
+            endpoint=validated_data['endpoint'],
+            defaults={
+                'p256dh': keys_data['p256dh'],
+                'auth': keys_data['auth']
+            }
+        )
+        return subscription

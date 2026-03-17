@@ -52,3 +52,28 @@ class ShoppingItemsList(models.Model):
         ]
         verbose_name = "Przedmiot zakupowy"
         verbose_name_plural = "Lista przedmiotów zakupowych"
+        
+        
+class ListPushSubscription(models.Model):
+    shopping_list = models.ForeignKey(
+        ShoppingList,
+        on_delete=models.CASCADE,
+        related_name="push_subscriptions"
+    )
+    # Required Web Push fields provided by the browser
+    endpoint = models.URLField(max_length=500)
+    p256dh = models.CharField(max_length=200)
+    auth = models.CharField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # Ensures one device cannot subscribe to the same list multiple times
+        constraints = [
+            models.UniqueConstraint(
+                fields=["shopping_list", "endpoint"],
+                name="unique_list_subscription"
+            )
+        ]
+
+    def __str__(self):
+        return f"Subscription for {self.shopping_list.title}"

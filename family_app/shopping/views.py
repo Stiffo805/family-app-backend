@@ -7,9 +7,10 @@ from rest_framework.response import Response
 from rest_framework import status, serializers
 from drf_spectacular.utils import extend_schema, inline_serializer
 
-from shopping.models import ShoppingList, ShoppingItemsList
-from shopping.serializers import ShoppingListsSerializer, ShoppingListSerializer
+from shopping.models import ShoppingList, ShoppingItemsList, ListPushSubscription
+from shopping.serializers import ShoppingListsSerializer, ShoppingListSerializer, ListPushSubscriptionSerializer
 
+from django.shortcuts import get_object_or_404
 
 # Create your views here.
 
@@ -84,4 +85,72 @@ class ShoppingListItemView(APIView):
         return Response(
             {'error': 'The is_checked field is required.'},
             status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+class SubscribeToListView(APIView):
+    # Enforce token authentication, as requested previously
+    permission_classes = [IsAdminUser]
+    
+    @extend_schema(
+        request=ListPushSubscriptionSerializer,
+        responses={201: {"type": "object", "properties": {"status": {"type": "string"}}}}
+    )
+    def post(self, request, list_id: int):
+        # Ensure the target shopping list exists, otherwise return 404
+        shopping_list = get_object_or_404(ShoppingList, id=list_id)
+        
+        # Initialize the serializer, passing the list instance via context
+        serializer = ListPushSubscriptionSerializer(
+            data=request.data,
+            context={'shopping_list': shopping_list}
+        )
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"status": "Successfully subscribed to list notifications"},
+                status=status.HTTP_201_CREATED
+            )
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UnsubscribeFromListView(APIView):
+    permission_classes = [IsAdminUser]
+    
+    @extend_schema(
+        request=inline_serializer(
+            name='UnsubscribePayload',
+            fields={'endpoint': serializers.URLField()}
+        ),
+        responses={200: {"type": "object", "properties": {"status": {"type": "string"}}}}
+    )
+    def post(self, request, list_id: int):
+        # The browser's unique endpoint URL
+        endpoint = request.data.get('endpoint')
+        
+        if not endpoint:
+            return Response(
+                {"error": "Endpoint is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Delete the specific subscription record for this device and this list
+        deleted_count, _ = ListPushSubscription.objects.filter(
+            shopping_list_id=list_id,
+            endpoint=endpoint
+        ).delete()
+        
+        if deleted_count > 0:
+            return Response(
+                {"status": "Successfully unsubscribed from list"},
+                status=status.HTTP_200_OK
+            )
+        
+        # If the record didn't exist, we still return 200 OK
+        # because the end goal (user not being subscribed) is met.
+        return Response(
+            {"status": "Subscription did not exist"},
+            status=status.HTTP_200_OK
         )
