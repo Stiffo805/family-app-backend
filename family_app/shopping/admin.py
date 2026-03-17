@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from shopping.models import ShoppingListItem, ShoppingList, ShoppingItemsList
+from shopping.models import ShoppingListItem, ShoppingList, ShoppingItemsList, ListPushSubscription
 from shopping.utils import notify_subscribers_about_update
 
 
@@ -31,3 +31,4 @@ class ShoppingListAdmin(admin.ModelAdmin):
 
 admin.site.register(ShoppingListItem)
 admin.site.register(ShoppingList, ShoppingListAdmin)
+admin.site.register(ListPushSubscription)
