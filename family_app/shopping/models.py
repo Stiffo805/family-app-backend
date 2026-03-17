@@ -29,11 +29,11 @@ class ShoppingList(models.Model):
 class ShoppingItemsList(models.Model):
     shopping_list = models.ForeignKey(
         ShoppingList,
-        on_delete=models.PROTECT
+        on_delete=models.CASCADE
     )
     shopping_list_item = models.ForeignKey(
         ShoppingListItem,
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         verbose_name="Przedmiot zakupowy"
     )
     quantity = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))], verbose_name="Ilość")
