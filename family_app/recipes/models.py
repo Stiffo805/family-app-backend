@@ -8,6 +8,7 @@ from markdownx.models import MarkdownxField
 
 class Unit(models.TextChoices):
   ITEM = "item", _("szt.")
+  PACKET = "packet", _("opakowania")
   LITRE = "litre", _("l")
   MILLILITER = "milliliter", _("ml")
   KILOGRAM = "kilogram", _("kg")
