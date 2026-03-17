@@ -11,6 +11,14 @@ class ShoppingItemsListInline(admin.TabularInline):
     extra = 1
     min_num = 1
     fields = ['shopping_list_item', 'quantity', 'unit', 'extra_notes']
+    
+    def formfield_for_foreignkey(
+        self, db_field, request, **kwargs
+    ):
+        if db_field.name == 'shopping_list_item':
+            kwargs["queryset"] = db_field.related_model.objects.order_by('name')
+            
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 class ShoppingListAdmin(admin.ModelAdmin):
     inlines = [ShoppingItemsListInline]
