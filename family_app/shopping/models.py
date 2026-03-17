@@ -6,7 +6,7 @@ from recipes.models import Unit
 # Create your models here.
 
 class ShoppingListItem(models.Model):
-    name = models.CharField(max_length=200, verbose_name="Nazwa")
+    name = models.CharField(max_length=200, verbose_name="Nazwa", unique=True)
     
     def __str__(self):
         return self.name
@@ -16,7 +16,7 @@ class ShoppingListItem(models.Model):
         verbose_name_plural = "Przedmioty zakupowe"
     
 class ShoppingList(models.Model):
-    title = models.CharField(max_length=200, verbose_name="Tytuł")
+    title = models.CharField(max_length=200, verbose_name="Tytuł", unique=True)
     description = models.CharField(max_length=400, null=True, blank=True, verbose_name="Opis/uwagi")
     
     def __str__(self):
