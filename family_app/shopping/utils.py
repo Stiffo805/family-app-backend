@@ -4,14 +4,20 @@ from django.conf import settings
 from pywebpush import webpush, WebPushException
 
 from .models import ListPushSubscription
+from .serializers import ShoppingItemsListSerializer
 
-def notify_subscribers_about_update(shopping_list):
+
+def notify_subscribers_about_update(shopping_list, added_items, changed_items, deleted_items):
     try:
         raw_timestamp = timezone.now().isoformat()
         
         payload = json.dumps({
             "title": "Aktualizacja listy zakupów",
             "list_title": shopping_list.title,
+            "list_id": shopping_list.id,
+            "added_items": ShoppingItemsListSerializer(added_items, many=True, read_only=True).data,
+            "changed_items": ShoppingItemsListSerializer(changed_items, many=True, read_only=True).data,
+            "deleted_items": ShoppingItemsListSerializer(deleted_items, many=True, read_only=True).data,
             "timestamp": raw_timestamp,
             "url": f"/family-app-frontend/shopping/lists/{shopping_list.id}"
         })
