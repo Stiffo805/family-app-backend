@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from django.http import JsonResponse, Http404
 from django.shortcuts import render
 from rest_framework.permissions import IsAdminUser
@@ -7,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework import status, serializers
 from drf_spectacular.utils import extend_schema, inline_serializer
 
-from shopping.models import ShoppingList, ShoppingItemsList, ListPushSubscription
+from shopping.models import ShoppingList, ShoppingItemsList, ListPushSubscription, ShoppingListItem
 from shopping.serializers import ShoppingListsSerializer, ShoppingListSerializer, ListPushSubscriptionSerializer
 
 from django.shortcuts import get_object_or_404
@@ -87,7 +89,28 @@ class ShoppingListItemView(APIView):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-
+class ShoppingListItemsView(APIView):
+    def get(self, request: Request):
+        shopping_items_lists = ShoppingItemsList.objects.filter(is_checked=False)
+        item_to_shopping_lists_names = defaultdict(list)
+        
+        for shopping_item in shopping_items_lists:
+            ingredient_id = shopping_item.shopping_list_item.id
+            ingredient_name = shopping_item.shopping_list_item.name
+            shopping_list_title = shopping_item.shopping_list.title
+            item_to_shopping_lists_names[(ingredient_id, ingredient_name)].append(shopping_list_title)
+        
+        result = []
+        
+        for (ingredient_id, ingredient_name), shopping_lists_names in item_to_shopping_lists_names.items():
+            result.append({
+                "ingredient_id": ingredient_id,
+                "ingredient_name": ingredient_name,
+                "shopping_lists_names": shopping_lists_names
+            })
+            
+        return JsonResponse({"items": result})
+        
 class SubscribeToListView(APIView):
     # Enforce token authentication, as requested previously
     permission_classes = [IsAdminUser]
