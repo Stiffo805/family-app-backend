@@ -36,8 +36,8 @@ class ShoppingItemsList(models.Model):
         on_delete=models.CASCADE,
         verbose_name="Przedmiot zakupowy"
     )
-    quantity = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))], verbose_name="Ilość")
-    unit = models.CharField(max_length=10, choices=Unit, verbose_name="Jednostka")
+    quantity = models.DecimalField(max_digits=10, null=True, blank=True, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))], verbose_name="Ilość")
+    unit = models.CharField(max_length=10, choices=Unit, null=True, blank=True, verbose_name="Jednostka")
     extra_notes = models.CharField(max_length=1000, null=True, blank=True, verbose_name="Dodatkowe uwagi")
     is_checked = models.BooleanField(default=False)
     
