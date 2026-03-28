@@ -1,4 +1,5 @@
 from collections import defaultdict
+from random import choices
 
 from django.http import JsonResponse, Http404
 from django.shortcuts import render
@@ -9,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework import status, serializers
 from drf_spectacular.utils import extend_schema, inline_serializer
 
+from recipes.models import Unit
 from shopping.models import ShoppingList, ShoppingItemsList, ListPushSubscription, ShoppingListItem
 from shopping.serializers import ShoppingListsSerializer, ShoppingListSerializer, ListPushSubscriptionSerializer
 
@@ -88,6 +90,36 @@ class ShoppingListItemView(APIView):
             {'error': 'The is_checked field is required.'},
             status=status.HTTP_400_BAD_REQUEST
         )
+    
+    @extend_schema(
+        # This tells Swagger what the request body should look like
+        request=inline_serializer(
+            name='EditItem',
+            fields={
+                'quantity': serializers.DecimalField(max_digits=10, decimal_places=2, allow_null=True),
+                'unit': serializers.CharField(allow_null=True, allow_blank=True),
+                'extra_notes': serializers.CharField(max_length=1000, allow_null=True, allow_blank=True)
+            }
+        )
+    )
+    def put(self, request: Request, list_id: int, entry_id: int):
+        shopping_list_entry = self.get_object(list_id, entry_id)
+        quantity = request.data.get('quantity')
+        unit = request.data.get('unit')
+        extra_notes = request.data.get('extra_notes')
+        
+        if quantity is not None:
+            shopping_list_entry.quantity = quantity
+        if unit is not None:
+            shopping_list_entry.unit = unit
+        if extra_notes is not None:
+            shopping_list_entry.extra_notes = extra_notes
+        
+        shopping_list_entry.save()
+        
+        return Response(
+            status=status.HTTP_200_OK
+        )
 
 class ShoppingListItemsView(APIView):
     def get(self, request: Request):
@@ -111,6 +143,14 @@ class ShoppingListItemsView(APIView):
             
         return JsonResponse({"items": result})
         
+class UnitsView(APIView):
+    def get(self, request: Request):
+        units_data = [
+            {"value": key, "label": label}
+            for key, label in Unit.choices
+        ]
+        return JsonResponse({"units": units_data})
+
 class SubscribeToListView(APIView):
     # Enforce token authentication, as requested previously
     permission_classes = [IsAdminUser]
