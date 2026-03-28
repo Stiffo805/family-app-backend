@@ -21,7 +21,7 @@ from markdownx.views import MarkdownifyView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.authtoken.views import obtain_auth_token
 
-from family_app.views import IsAliveView
+from family_app.views import IsAliveView, LogoutView
 
 urlpatterns = [
     path('alive/', IsAliveView.as_view(), name='is-alive'),
@@ -32,6 +32,7 @@ urlpatterns = [
     
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/login/', obtain_auth_token, name='api_token_auth'),
+    path('api/logout/', LogoutView.as_view(), name='api_logout'),
     # Endpoint for the Swagger UI
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 ]
