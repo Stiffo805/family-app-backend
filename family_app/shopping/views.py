@@ -108,12 +108,9 @@ class ShoppingListItemView(APIView):
         unit = request.data.get('unit')
         extra_notes = request.data.get('extra_notes')
         
-        if quantity is not None:
-            shopping_list_entry.quantity = quantity
-        if unit is not None:
-            shopping_list_entry.unit = unit
-        if extra_notes is not None:
-            shopping_list_entry.extra_notes = extra_notes
+        shopping_list_entry.quantity = quantity
+        shopping_list_entry.unit = unit
+        shopping_list_entry.extra_notes = extra_notes
         
         shopping_list_entry.save()
         
