@@ -1,8 +1,5 @@
 from collections import defaultdict
-from random import choices
-
 from django.http import JsonResponse, Http404
-from django.shortcuts import render
 from rest_framework.permissions import IsAdminUser
 from rest_framework.request import Request
 from rest_framework.views import APIView
@@ -12,24 +9,20 @@ from drf_spectacular.utils import extend_schema, inline_serializer
 
 from recipes.models import Unit
 from shopping.models import ShoppingList, ShoppingItemsList, ListPushSubscription, ShoppingListItem
-from shopping.serializers import ShoppingListsSerializer, ShoppingListSerializer, ListPushSubscriptionSerializer
+from shopping.serializers import ShoppingListsSerializer, ShoppingListSerializer, ListPushSubscriptionSerializer, \
+    ShoppingItemSerializer
 
 from django.shortcuts import get_object_or_404
 
 # Create your views here.
 
-class ShoppingListsView(APIView):
-    def get(self, request):
-        shopping_lists = ShoppingList.objects.all()
-        serializer = ShoppingListsSerializer(shopping_lists, many=True)
-        return JsonResponse({"shopping_lists": serializer.data})
-    
 def get_shopping_list(pk):
     try:
         return ShoppingList.objects.get(pk=pk)
     except ShoppingList.DoesNotExist:
         raise Http404
-    
+
+
 def get_shopping_list_entry(list_id: int, entry_id: int):
     try:
         return ShoppingItemsList.objects.get(
@@ -39,21 +32,90 @@ def get_shopping_list_entry(list_id: int, entry_id: int):
     except ShoppingItemsList.DoesNotExist:
         raise Http404
 
+
+def get_shopping_list_item(item_id: int):
+    try:
+        return ShoppingListItem.objects.get(
+            id=item_id
+        )
+    except ShoppingListItem.DoesNotExist:
+        raise Http404
+    
+def is_shopping_list_item_in_list(list_id: int, item_id: int):
+    item = get_shopping_list_item(item_id)
+    shopping_list = get_shopping_list(list_id)
+    try:
+        ShoppingItemsList.objects.get(
+            shopping_list=shopping_list,
+            shopping_list_item=item
+        )
+        return True
+    except ShoppingItemsList.DoesNotExist:
+        return False
+
+class ShoppingListsView(APIView):
+    permission_classes = [IsAdminUser]
+    
+    def get(self, request):
+        shopping_lists = ShoppingList.objects.all()
+        serializer = ShoppingListsSerializer(shopping_lists, many=True)
+        return JsonResponse({"shopping_lists": serializer.data})
+    
 class ShoppingListView(APIView):
-    def get_object(self, pk):
-        return get_shopping_list(pk)
+    permission_classes = [IsAdminUser]
+    
+    def get_object(self, list_id):
+        return get_shopping_list(list_id)
         
-    def get(self, request: Request, pk):
-        shopping_list = self.get_object(pk)
+    def get(self, request: Request, list_id: int):
+        shopping_list = self.get_object(list_id)
         serializer = ShoppingListSerializer(shopping_list)
         return JsonResponse(serializer.data)
+    
+    @extend_schema(
+        # This tells Swagger what the request body should look like
+        request=inline_serializer(
+            name='CreateItem',
+            fields={
+                'item_id': serializers.IntegerField(),
+                'quantity': serializers.DecimalField(max_digits=10, decimal_places=2, allow_null=True),
+                'unit': serializers.CharField(allow_null=True, allow_blank=True),
+                'extra_notes': serializers.CharField(max_length=1000, allow_null=True, allow_blank=True)
+            }
+        )
+    )
+    def post(self, request: Request, list_id: int):
+        shopping_list = get_shopping_list(list_id)
+        shopping_item = get_shopping_list_item(request.data.get('item_id'))
+        
+        if is_shopping_list_item_in_list(list_id, request.data.get('item_id')):
+            return Response(
+                status=status.HTTP_409_CONFLICT,
+                data={"error": "This shopping item already exists in the list"}
+            )
+        
+        new_shopping_list_item = ShoppingItemsList(
+            shopping_list=shopping_list,
+            shopping_list_item=shopping_item,
+            quantity=request.data.get('quantity'),
+            unit=request.data.get('unit'),
+            extra_notes=request.data.get('extra_notes')
+        )
+        new_shopping_list_item.save()
+        return Response(
+            status=status.HTTP_200_OK
+        )
+
 
 class ShoppingListItemView(APIView):
     permission_classes = [IsAdminUser]
     
-    def get_object(self, list_id: int, entry_id: int):
+    def get_entry(self, list_id: int, entry_id: int):
         return get_shopping_list_entry(list_id, entry_id)
     
+    def get_object(self, item_id: int):
+        return get_shopping_list_item(item_id)
+        
     @extend_schema(
         # This tells Swagger what the request body should look like
         request=inline_serializer(
@@ -72,7 +134,7 @@ class ShoppingListItemView(APIView):
         )}
     )
     def patch(self, request: Request, list_id: int, entry_id: int):
-        shopping_list_entry = self.get_object(list_id, entry_id)
+        shopping_list_entry = self.get_entry(list_id, entry_id)
         
         # In DRF, parsed JSON payload is accessed via request.data
         is_checked_value = request.data.get('is_checked')
@@ -103,7 +165,7 @@ class ShoppingListItemView(APIView):
         )
     )
     def put(self, request: Request, list_id: int, entry_id: int):
-        shopping_list_entry = self.get_object(list_id, entry_id)
+        shopping_list_entry = self.get_entry(list_id, entry_id)
         quantity = request.data.get('quantity')
         unit = request.data.get('unit')
         extra_notes = request.data.get('extra_notes')
@@ -117,9 +179,19 @@ class ShoppingListItemView(APIView):
         return Response(
             status=status.HTTP_200_OK
         )
+    def delete(self, request: Request, list_id: int, entry_id: int):
+        shopping_list_entry = self.get_entry(list_id, entry_id)
+        shopping_list_entry.delete()
+        return Response(
+            status=status.HTTP_204_NO_CONTENT
+        )
+    
 
 class ShoppingListItemsView(APIView):
+    permission_classes = [IsAdminUser]
+    
     def get(self, request: Request):
+        # --- Anywhere unchecked items ---
         shopping_items_lists = ShoppingItemsList.objects.filter(is_checked=False)
         item_to_shopping_lists_names = defaultdict(list)
         
@@ -138,9 +210,17 @@ class ShoppingListItemsView(APIView):
                 "shopping_lists_names": shopping_lists_names
             })
             
-        return JsonResponse({"items": result})
+        # --- All items ---
+        all_items = ShoppingListItem.objects.all()
+            
+        return JsonResponse({
+            "anywhere_unchecked_items": result,
+            "all_items": ShoppingItemSerializer(all_items, many=True).data
+        })
         
 class UnitsView(APIView):
+    permission_classes = [IsAdminUser]
+    
     def get(self, request: Request):
         units_data = [
             {"value": key, "label": label}
