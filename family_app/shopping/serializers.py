@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from shopping.models import ListPushSubscription
+from shopping.models import ListPushSubscription, ShoppingListItem
 
 from shopping.models import ShoppingList, ShoppingItemsList
 
@@ -7,6 +7,11 @@ class ShoppingListsSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShoppingList
         fields = ['id', 'title', 'description']
+        
+class ShoppingItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShoppingListItem
+        fields = ['id', 'name']
         
 class ShoppingItemsListSerializer(serializers.ModelSerializer):
     product_id = serializers.IntegerField(
