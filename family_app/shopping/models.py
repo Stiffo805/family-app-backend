@@ -41,6 +41,8 @@ class ShoppingItemsList(models.Model):
     extra_notes = models.CharField(max_length=1000, null=True, blank=True, verbose_name="Dodatkowe uwagi")
     is_checked = models.BooleanField(default=False)
     
+    updated_at = models.DateTimeField(auto_now=True)
+    
     def __str__(self):
         return str(self.id)
     
