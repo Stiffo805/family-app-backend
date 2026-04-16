@@ -20,7 +20,7 @@ class Tag(models.Model):
 
 class ShoppingListItem(models.Model):
     name = models.CharField(max_length=200, verbose_name="Nazwa", unique=True)
-    tags = ManyToManyField(Tag, related_name="items")
+    tags = ManyToManyField(Tag, related_name="items", verbose_name="Etykiety")
     
     def __str__(self):
         return self.name
