@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from shopping.models import ShoppingListItem, ShoppingList, ShoppingItemsList, ListPushSubscription
+from shopping.models import ShoppingListItem, ShoppingList, ShoppingItemsList, ListPushSubscription, Tag
 from shopping.utils import notify_subscribers_about_update
 import copy
 
@@ -69,6 +69,24 @@ class ShoppingListAdmin(admin.ModelAdmin):
         # Fire a single notification to all subscribers with our modified lists.
         notify_subscribers_about_update(form.instance, added_items, changed_items, deleted_items)
 
-admin.site.register(ShoppingListItem)
+admin.site.register(Tag)
 admin.site.register(ShoppingList, ShoppingListAdmin)
 admin.site.register(ListPushSubscription)
+
+
+@admin.register(ShoppingListItem)
+class ShoppingListItemAdmin(admin.ModelAdmin):
+    list_display = ('name', 'display_tags')
+    
+    list_display_links = ('name',)
+    
+    def display_tags(self, obj):
+        tags = obj.tags.all()
+        if tags:
+            return ", ".join([f"'{tag.name}'" for tag in tags])
+        return "-"
+    
+    display_tags.short_description = "Etykiety"
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related('tags')

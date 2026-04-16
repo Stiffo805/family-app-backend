@@ -1,12 +1,26 @@
 from django.core.validators import MinValueValidator
 from django.db import models
 from decimal import Decimal
+
+from django.db.models import ManyToManyField
+
 from recipes.models import Unit
 
 # Create your models here.
 
+class Tag(models.Model):
+    name = models.CharField(max_length=100, unique=True, verbose_name="Nazwa etykiety")
+    
+    class Meta:
+        verbose_name = "Etykieta"
+        verbose_name_plural = "Etykiety"
+    
+    def __str__(self):
+        return self.name
+
 class ShoppingListItem(models.Model):
     name = models.CharField(max_length=200, verbose_name="Nazwa", unique=True)
+    tags = ManyToManyField(Tag, related_name="items")
     
     def __str__(self):
         return self.name
@@ -54,7 +68,6 @@ class ShoppingItemsList(models.Model):
         ]
         verbose_name = "Przedmiot zakupowy"
         verbose_name_plural = "Lista przedmiotów zakupowych"
-        
         
 class ListPushSubscription(models.Model):
     shopping_list = models.ForeignKey(

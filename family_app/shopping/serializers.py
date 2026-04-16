@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from shopping.models import ListPushSubscription, ShoppingListItem
 
-from shopping.models import ShoppingList, ShoppingItemsList
+from shopping.models import ShoppingList, ShoppingItemsList, Tag
 
 class ShoppingListsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -11,6 +11,11 @@ class ShoppingListsSerializer(serializers.ModelSerializer):
 class ShoppingItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShoppingListItem
+        fields = ['id', 'name']
+        
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
         fields = ['id', 'name']
         
 class ShoppingItemsListSerializer(serializers.ModelSerializer):
@@ -25,11 +30,13 @@ class ShoppingItemsListSerializer(serializers.ModelSerializer):
         read_only=True
     )
     
+    tags = TagSerializer(source='shopping_list_item.tags', many=True, read_only=True)
+    
     unit_display = serializers.CharField(source='get_unit_display', read_only=True)
     
     class Meta:
         model = ShoppingItemsList
-        fields = ['id', 'product_id', 'product_name', 'quantity', 'unit', 'unit_display', 'extra_notes', 'is_checked', 'updated_at']
+        fields = ['id', 'product_id', 'product_name', 'tags', 'quantity', 'unit', 'unit_display', 'extra_notes', 'is_checked', 'updated_at']
 
 class ShoppingListSerializer(serializers.ModelSerializer):
     

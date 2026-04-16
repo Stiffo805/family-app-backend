@@ -8,9 +8,9 @@ from rest_framework import status, serializers
 from drf_spectacular.utils import extend_schema, inline_serializer
 
 from recipes.models import Unit
-from shopping.models import ShoppingList, ShoppingItemsList, ListPushSubscription, ShoppingListItem
+from shopping.models import ShoppingList, ShoppingItemsList, ListPushSubscription, ShoppingListItem, Tag
 from shopping.serializers import ShoppingListsSerializer, ShoppingListSerializer, ListPushSubscriptionSerializer, \
-    ShoppingItemSerializer
+    ShoppingItemSerializer, TagSerializer
 
 from django.shortcuts import get_object_or_404
 
@@ -227,6 +227,14 @@ class UnitsView(APIView):
             for key, label in Unit.choices
         ]
         return JsonResponse({"units": units_data})
+
+class TagsView(APIView):
+    permission_classes = [IsAdminUser]
+    
+    def get(self, request: Request):
+        all_tags = Tag.objects.all()
+        res = TagSerializer(all_tags, many=True).data
+        return JsonResponse({"items": res})
 
 class SubscribeToListView(APIView):
     # Enforce token authentication, as requested previously

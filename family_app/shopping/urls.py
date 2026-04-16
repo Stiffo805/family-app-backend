@@ -1,7 +1,7 @@
 from django.urls import path
 
 from shopping.views import ShoppingListsView, ShoppingListView, ShoppingListItemView, SubscribeToListView, \
-  UnsubscribeFromListView, ShoppingListItemsView, UnitsView
+  UnsubscribeFromListView, ShoppingListItemsView, UnitsView, TagsView
 
 urlpatterns = [
   path('lists/<int:list_id>/entries/<int:entry_id>/', ShoppingListItemView.as_view(), name='shopping-list-item-details'),
@@ -10,5 +10,6 @@ urlpatterns = [
   path('lists/<int:list_id>/', ShoppingListView.as_view(), name='shopping-list-details'),
   path('lists/', ShoppingListsView.as_view(), name='shopping-lists'),
   path('items/', ShoppingListItemsView.as_view(), name='items'),
-  path('units/', UnitsView.as_view(), name='units')
+  path('units/', UnitsView.as_view(), name='units'),
+  path('tags/', TagsView.as_view(), name='tags')
 ]
