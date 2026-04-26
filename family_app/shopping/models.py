@@ -8,6 +8,10 @@ from recipes.models import Unit
 
 # Create your models here.
 
+class MoveLackingItemOperationType(models.TextChoices):
+    COPY = "copy"
+    CUT = "cut"
+
 class Tag(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="Nazwa etykiety")
     
@@ -26,8 +30,27 @@ class ShoppingListItem(models.Model):
         return self.name
     
     class Meta:
-        verbose_name = "Przemiot zakupowy"
+        verbose_name = "Przedmiot zakupowy"
         verbose_name_plural = "Przedmioty zakupowe"
+        
+class LackingShoppingListItems(models.Model):
+    shopping_list_item = models.OneToOneField(
+        ShoppingListItem,
+        on_delete=models.CASCADE,
+        verbose_name="Przedmiot zakupowy"
+    )
+    quantity = models.DecimalField(max_digits=10, null=True, blank=True, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))], verbose_name="Ilość do kupienia")
+    unit = models.CharField(max_length=10, choices=Unit, null=True, blank=True, verbose_name="Jednostka")
+    extra_notes = models.CharField(max_length=1000, null=True, blank=True, verbose_name="Dodatkowe uwagi")
+    is_checked = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Czas ostatniej aktualizacji")
+    
+    def __str__(self):
+        return self.shopping_list_item.name
+    
+    class Meta:
+        verbose_name = "Brakujący przedmiot zakupowy"
+        verbose_name_plural = "Brakujące przedmioty zakupowe"
     
 class ShoppingList(models.Model):
     title = models.CharField(max_length=200, verbose_name="Tytuł", unique=True)

@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from shopping.models import ShoppingListItem, ShoppingList, ShoppingItemsList, ListPushSubscription, Tag
+from shopping.models import ShoppingListItem, ShoppingList, ShoppingItemsList, ListPushSubscription, Tag, \
+    LackingShoppingListItems
 from shopping.utils import notify_subscribers_about_update
 import copy
 
@@ -22,7 +23,7 @@ class ShoppingItemsListInline(admin.TabularInline):
 
 class ShoppingListAdmin(admin.ModelAdmin):
     inlines = [ShoppingItemsListInline]
-    readonly_fields = ('id',)
+    readonly_fields = ['id']
     fields = ['id', 'title', 'description']
     
     def save_related(self, request, form, formsets, change):
@@ -68,9 +69,15 @@ class ShoppingListAdmin(admin.ModelAdmin):
         # At this point, the list and all its items are updated in the DB.
         # Fire a single notification to all subscribers with our modified lists.
         notify_subscribers_about_update(form.instance, added_items, changed_items, deleted_items)
+        
+class LackingShoppingListItemsAdmin(admin.ModelAdmin):
+    model = LackingShoppingListItems
+    readonly_fields = ['id', 'updated_at']
+    fields = ['shopping_list_item', 'quantity', 'unit', 'extra_notes']
 
 admin.site.register(Tag)
 admin.site.register(ShoppingList, ShoppingListAdmin)
+admin.site.register(LackingShoppingListItems, LackingShoppingListItemsAdmin)
 admin.site.register(ListPushSubscription)
 
 
