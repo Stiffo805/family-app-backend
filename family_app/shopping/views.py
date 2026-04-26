@@ -1,5 +1,7 @@
 from collections import defaultdict
 from django.http import JsonResponse, Http404
+from dotenv.variables import Literal
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAdminUser
 from rest_framework.request import Request
 from rest_framework.views import APIView
@@ -8,9 +10,10 @@ from rest_framework import status, serializers
 from drf_spectacular.utils import extend_schema, inline_serializer
 
 from recipes.models import Unit
-from shopping.models import ShoppingList, ShoppingItemsList, ListPushSubscription, ShoppingListItem, Tag
+from shopping.models import ShoppingList, ShoppingItemsList, ListPushSubscription, ShoppingListItem, Tag, \
+    LackingShoppingListItems, MoveLackingItemOperationType
 from shopping.serializers import ShoppingListsSerializer, ShoppingListSerializer, ListPushSubscriptionSerializer, \
-    ShoppingItemSerializer, TagSerializer
+    ShoppingItemSerializer, TagSerializer, LackingShoppingListItemSerializer
 
 from django.shortcuts import get_object_or_404
 
@@ -217,7 +220,70 @@ class ShoppingListItemsView(APIView):
             "anywhere_unchecked_items": result,
             "all_items": ShoppingItemSerializer(all_items, many=True).data
         })
+
+class LackingShoppingListItemsView(APIView):
+    permission_classes = [IsAdminUser]
+    
+    def get(self, request: Request):
+        lacking_shopping_items = LackingShoppingListItems.objects.all()
+        res = LackingShoppingListItemSerializer(lacking_shopping_items, many=True).data
+        return Response({"entries": res})
+
+class LackingShoppingListItemView(APIView):
+    permission_classes = [IsAdminUser]
         
+    @extend_schema(
+        request=inline_serializer(
+            name='ToggleCheckLackingItem',
+            fields={
+                'is_checked': serializers.BooleanField()
+            }
+        )
+    )
+    def patch(self, request: Request, item_id: int):
+        the_item = get_object_or_404(LackingShoppingListItems, pk=item_id)
+        the_item.is_checked = request.data.get('is_checked')
+        the_item.save()
+        return Response(
+            status=status.HTTP_200_OK
+        )
+
+@extend_schema(
+        request=inline_serializer(
+            name='MoveLackingItemsToList',
+            fields={
+                'lacking_items_ids': serializers.ListField(child=serializers.IntegerField()),
+                'operation_type': serializers.ChoiceField(choices=MoveLackingItemOperationType)
+            }
+        )
+    )
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def move_lacking_items_to_list(request: Request, target_list_id: int):
+    target_list = get_object_or_404(ShoppingList, pk=target_list_id)
+    lacking_ids = request.data.get('lacking_items_ids', [])
+    records_to_move = LackingShoppingListItems.objects.filter(id__in=lacking_ids)
+    new_shopping_list_items = [ShoppingItemsList(
+        shopping_list=target_list,
+        shopping_list_item_id=item.shopping_list_item_id,
+        quantity=item.quantity,
+        unit=item.unit,
+        extra_notes=item.extra_notes,
+        is_checked=item.is_checked
+    ) for item in records_to_move]
+    ShoppingItemsList.objects.bulk_create(
+        new_shopping_list_items,
+        update_conflicts=True,
+        unique_fields=['shopping_list', 'shopping_list_item'],
+        update_fields=['quantity', 'unit', 'extra_notes', 'is_checked']
+    )
+    
+    operation = request.data.get('operation_type', 'copy')
+    if operation == 'cut':
+        records_to_move.delete()
+    
+    return Response(status=status.HTTP_201_CREATED)
+
 class UnitsView(APIView):
     permission_classes = [IsAdminUser]
     

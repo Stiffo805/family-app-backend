@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from shopping.models import ListPushSubscription, ShoppingListItem
+from shopping.models import ListPushSubscription, ShoppingListItem, LackingShoppingListItems
 
 from shopping.models import ShoppingList, ShoppingItemsList, Tag
 
@@ -45,6 +45,25 @@ class ShoppingListSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShoppingList
         fields = ['id', 'title', 'description', 'entries']
+        
+class LackingShoppingListItemSerializer(serializers.ModelSerializer):
+    product_id = serializers.IntegerField(
+        source='shopping_list_item.id',
+        read_only=True
+    )
+    
+    product_name = serializers.CharField(
+        source='shopping_list_item.name',
+        read_only=True
+    )
+    
+    tags = TagSerializer(source='shopping_list_item.tags', many=True, read_only=True)
+    
+    unit_display = serializers.CharField(source='get_unit_display', read_only=True)
+    
+    class Meta:
+        model = LackingShoppingListItems
+        fields = ['id', 'product_id', 'product_name', 'tags', 'quantity', 'unit', 'unit_display', 'extra_notes', 'is_checked', 'updated_at']
 
 
 # Serializer for the nested 'keys' object provided by the browser
