@@ -109,8 +109,7 @@ class ShoppingListView(APIView):
             status=status.HTTP_200_OK
         )
 
-
-class ShoppingListItemView(APIView):
+class ShoppingItemsListItemView(APIView):
     permission_classes = [IsAdminUser]
     
     def get_entry(self, list_id: int, entry_id: int):
@@ -182,13 +181,13 @@ class ShoppingListItemView(APIView):
         return Response(
             status=status.HTTP_200_OK
         )
+        
     def delete(self, request: Request, list_id: int, entry_id: int):
         shopping_list_entry = self.get_entry(list_id, entry_id)
         shopping_list_entry.delete()
         return Response(
             status=status.HTTP_204_NO_CONTENT
         )
-    
 
 class ShoppingListItemsView(APIView):
     permission_classes = [IsAdminUser]
@@ -220,6 +219,35 @@ class ShoppingListItemsView(APIView):
             "anywhere_unchecked_items": result,
             "all_items": ShoppingItemSerializer(all_items, many=True).data
         })
+    
+    @extend_schema(
+        # This tells Swagger what the request body should look like
+        request=inline_serializer(
+            name='CreateItem',
+            fields={
+                'name': serializers.CharField(max_length=200),
+                'tags_ids': serializers.PrimaryKeyRelatedField(
+                    many=True,
+                    queryset=Tag.objects.all(),
+                    allow_empty=True
+                )
+            }
+        )
+    )
+    def post(self, request: Request):
+        tags_ids = request.data.get('tags_ids', [])
+        name = request.data.get('name')
+        
+        if ShoppingListItem.objects.filter(name=name).exists():
+            return Response({"detail": "Produkt o tej nazwie już istnieje."}, status=status.HTTP_409_CONFLICT)
+        
+        new_shopping_list_item = ShoppingListItem(name=name)
+        new_shopping_list_item.save()
+        
+        if tags_ids:
+            new_shopping_list_item.tags.set(tags_ids)
+        
+        return Response(status=status.HTTP_201_CREATED)
 
 class LackingShoppingListItemsView(APIView):
     permission_classes = [IsAdminUser]
@@ -228,6 +256,39 @@ class LackingShoppingListItemsView(APIView):
         lacking_shopping_items = LackingShoppingListItems.objects.all()
         res = LackingShoppingListItemSerializer(lacking_shopping_items, many=True).data
         return Response({"entries": res})
+    
+    @extend_schema(
+        # This tells Swagger what the request body should look like
+        request=inline_serializer(
+            name='CreateLackingItem',
+            fields={
+                'item_id': serializers.IntegerField(),
+                'quantity': serializers.DecimalField(max_digits=10, decimal_places=2, allow_null=True),
+                'unit': serializers.CharField(allow_null=True, allow_blank=True),
+                'extra_notes': serializers.CharField(max_length=1000, allow_null=True, allow_blank=True)
+            }
+        )
+    )
+    def post(self, request: Request):
+        item_id = request.data.get('item_id')
+        shopping_item = get_shopping_list_item(item_id)
+        
+        if LackingShoppingListItems.objects.filter(shopping_list_item=shopping_item).exists():
+            return Response(
+                {"detail": "Ten przedmiot zakupowy istnieje już na liście brakujących"},
+                    status=status.HTTP_409_CONFLICT
+            )
+        
+        new_lacking_shopping_list_item = LackingShoppingListItems(
+            shopping_list_item=shopping_item,
+            quantity=request.data.get('quantity'),
+            unit=request.data.get('unit'),
+            extra_notes=request.data.get('extra_notes')
+        )
+        new_lacking_shopping_list_item.save()
+        return Response(
+            status=status.HTTP_200_OK
+        )
 
 class LackingShoppingListItemView(APIView):
     permission_classes = [IsAdminUser]
@@ -247,6 +308,31 @@ class LackingShoppingListItemView(APIView):
         return Response(
             status=status.HTTP_200_OK
         )
+    
+    @extend_schema(
+        # This tells Swagger what the request body should look like
+        request=inline_serializer(
+            name='UpdateLackingItem',
+            fields={
+                'item_id': serializers.IntegerField(),
+                'quantity': serializers.DecimalField(max_digits=10, decimal_places=2, allow_null=True),
+                'unit': serializers.CharField(allow_null=True, allow_blank=True),
+                'extra_notes': serializers.CharField(max_length=1000, allow_null=True, allow_blank=True)
+            }
+        )
+    )
+    def put(self, request: Request, item_id: int):
+        the_item = get_object_or_404(LackingShoppingListItems, pk=item_id)
+        the_item.quantity = request.data.get('quantity')
+        the_item.unit = request.data.get('unit')
+        the_item.extra_notes = request.data.get('extra_notes')
+        the_item.save()
+        return Response(status=status.HTTP_201_CREATED)
+    
+    def delete(self, request: Request, item_id: int):
+        the_item = get_object_or_404(LackingShoppingListItems, pk=item_id)
+        the_item.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 @extend_schema(
         request=inline_serializer(
@@ -301,6 +387,24 @@ class TagsView(APIView):
         all_tags = Tag.objects.all()
         res = TagSerializer(all_tags, many=True).data
         return JsonResponse({"items": res})
+    
+    @extend_schema(
+        request=inline_serializer(
+            name='CreateTag',
+            fields={
+                'name': serializers.CharField(max_length=100)
+            }
+        )
+    )
+    def post(self, request: Request):
+        name = request.data.get('name')
+        
+        if Tag.objects.filter(name=name).exists():
+            return Response({"detail": "Tag o tej nazwie już istnieje"}, status=status.HTTP_409_CONFLICT)
+        
+        tag_to_save = Tag(name=name)
+        tag_to_save.save()
+        return Response(status=status.HTTP_201_CREATED)
 
 class SubscribeToListView(APIView):
     # Enforce token authentication, as requested previously
