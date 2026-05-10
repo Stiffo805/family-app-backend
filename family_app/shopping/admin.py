@@ -74,6 +74,14 @@ class LackingShoppingListItemsAdmin(admin.ModelAdmin):
     model = LackingShoppingListItems
     readonly_fields = ['id', 'updated_at']
     fields = ['shopping_list_item', 'quantity', 'unit', 'extra_notes']
+    
+    def formfield_for_foreignkey(
+            self, db_field, request, **kwargs
+    ):
+        if db_field.name == 'shopping_list_item':
+            kwargs["queryset"] = db_field.related_model.objects.order_by('name')
+        
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 admin.site.register(Tag)
 admin.site.register(ShoppingList, ShoppingListAdmin)
