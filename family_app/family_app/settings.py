@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'recipes',
     'shopping',
     'activities',
+    'item_register',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

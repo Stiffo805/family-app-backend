@@ -29,6 +29,7 @@ urlpatterns = [
     path('recipes/', include("recipes.urls")),
     path('shopping/', include("shopping.urls")),
     path('activities/', include("activities.urls")),
+    path('item_register/', include("item_register.urls")),
     path('markdownx/markdownify/', MarkdownifyView.as_view(), name='markdownx_markdownify'),
     
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
