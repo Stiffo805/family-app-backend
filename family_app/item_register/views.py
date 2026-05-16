@@ -4,8 +4,8 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
-from item_register.models import ItemRegister
-from item_register.serializers import ItemRegisterSerializer
+from item_register.models import ItemRegister, Room, Category
+from item_register.serializers import ItemRegisterSerializer, RoomSerializer, CategorySerializer
 
 
 # Create your views here.
@@ -28,3 +28,17 @@ class ItemsRegisterView(APIView):
         else:
             item_register_entries = ItemRegister.objects.all()
         return Response({"items": ItemRegisterSerializer(item_register_entries, many=True).data})
+    
+class RoomsView(APIView):
+    permission_classes = [IsAdminUser]
+    
+    def get(self, request: Request):
+        rooms = Room.objects.all()
+        return Response({"items": RoomSerializer(rooms, many=True).data})
+    
+class CategoriesView(APIView):
+    permission_classes = [IsAdminUser]
+    
+    def get(self, request: Request):
+        categories = Category.objects.all()
+        return Response({"items": CategorySerializer(categories, many=True).data})
