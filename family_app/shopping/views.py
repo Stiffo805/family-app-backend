@@ -247,7 +247,7 @@ class ShoppingListItemsView(APIView):
         if tags_ids:
             new_shopping_list_item.tags.set(tags_ids)
         
-        return Response(status=status.HTTP_201_CREATED)
+        return Response(status=status.HTTP_201_CREATED, data={"item": ShoppingItemSerializer(new_shopping_list_item).data})
 
 class LackingShoppingListItemsView(APIView):
     permission_classes = [IsAdminUser]
