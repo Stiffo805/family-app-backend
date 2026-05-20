@@ -7,16 +7,19 @@ class ShoppingListsSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShoppingList
         fields = ['id', 'title', 'description']
-        
-class ShoppingItemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ShoppingListItem
-        fields = ['id', 'name']
-        
+      
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ['id', 'name']
+        
+class ShoppingItemSerializer(serializers.ModelSerializer):
+    
+    tags = TagSerializer(many=True)
+    
+    class Meta:
+        model = ShoppingListItem
+        fields = ['id', 'name', 'tags']
         
 class ShoppingItemsListSerializer(serializers.ModelSerializer):
     product_id = serializers.IntegerField(
